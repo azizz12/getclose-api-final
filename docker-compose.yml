@@ -1,0 +1,46 @@
+# Lance une base PostgreSQL locale pour le projet.
+# Démarrage : docker compose up -d
+# Arrêt     : docker compose down
+# (les données restent dans le volume tant qu'on ne fait pas "down -v")
+
+services:
+  db:
+    image: postgres:16
+    container_name: getclose-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: getclose
+      POSTGRES_PASSWORD: getclose
+      POSTGRES_DB: getclose
+    ports:
+      - "5432:5432"
+    volumes:
+      - getclose_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U getclose -d getclose"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: getclose-api
+    restart: unless-stopped
+    environment:
+      # "db" = nom du service Postgres ci-dessus (réseau interne Docker)
+      DATABASE_URL: postgresql+psycopg://getclose:getclose@db:5432/getclose
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-before-deploying}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: 60
+    ports:
+      - "8000:8000"
+    volumes:
+      # Monte le code pour que --reload prenne en compte les modifs sans rebuild
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  getclose_pg_data:

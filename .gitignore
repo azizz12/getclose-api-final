@@ -1,0 +1,19 @@
+# Environnements virtuels Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets — ne jamais committer le vrai .env
+.env
+
+# Base de données locale (si jamais on utilise SQLite en test)
+*.db
+*.sqlite3
+
+# Éditeurs
+.vscode/
+.idea/
+
+# Système
+.DS_Store
